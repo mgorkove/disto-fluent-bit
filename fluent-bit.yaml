@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentbit-config
+  namespace: disto-fluentbit
+  labels:
+    k8s-app: fluentbit
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         30
+        Log_Level     info
+        Daemon        off
+        Parsers_File  parsers.conf
+
+    [INPUT]
+        Name              tail
+        Tag               kube.*
+        Path              /var/log/containers/*.log
+        Exclude_Path      /var/log/containers/*_disto-fluentbit_*.log,/var/log/containers/*_disto-fluentbit_*.log
+        DB                /var/log/flb_kube.db
+        Parser            docker
+        Docker_Mode       On
+        Mem_Buf_Limit     5MB
+        Skip_Empty_Lines  On
+        Buffer_Chunk_Size 64k
+        Buffer_Max_Size   64k
+
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc.cluster.local:443
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+        Merge_Log           On
+        Buffer_Size         0
+        Use_Kubelet         true
+        Kubelet_Port        10250
+
+
+    [OUTPUT]
+        Name          http
+        Match         kube.*
+        Host          distotest.ngrok.io
+        Port          80
+        URI           /logs
+        Format        json_lines
+        compress      gzip
+#        Header        Content-Type application/json
+#        tls           on
+
+  parsers.conf: |
+    [PARSER]
+        Name        docker
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentbit
+  namespace: disto-fluentbit
+  labels:
+    app.kubernetes.io/name: fluentbit
+spec:
+  selector:
+    matchLabels:
+      name: fluentbit
+  template:
+    metadata:
+      labels:
+        name: fluentbit
+    spec:
+      serviceAccountName: fluentbitds
+      containers:
+        - name: fluent-bit
+          imagePullPolicy: Always
+          image: fluent/fluent-bit:latest
+          volumeMounts:
+            - name: varlog
+              mountPath: /var/log
+            - name: varlibdockercontainers
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+            - name: fluentbit-config
+              mountPath: /fluent-bit/etc/
+          resources:
+            limits:
+              memory: 1500Mi
+            requests:
+              cpu: 500m
+              memory: 500Mi
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      volumes:
+        - name: varlog
+          hostPath:
+            path: /var/log
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
+        - name: fluentbit-config
+          configMap:
+            name: fluentbit-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluentbitds
+  namespace: disto-fluentbit
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluentbit
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+      - pods
+      - nodes
+      - nodes/proxy
+    verbs: 
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fluentbit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fluentbit
+subjects:
+  - kind: ServiceAccount
+    name: fluentbitds
+    namespace: disto-fluentbit
