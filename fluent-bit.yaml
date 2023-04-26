@@ -45,7 +45,9 @@ data:
         Port          80
         URI           /logs
         Format        json_lines
-        compress      gzip
+        Compress      gzip
+        Header   Authorization Bearer DISTO_API_KEY
+        Header   X-Project-ID DISTO_PROJECT_ID
 #        Header        Content-Type application/json
 #        tls           on
 
