@@ -41,13 +41,13 @@ data:
     [OUTPUT]
         Name          http
         Match         kube.*
-        Host          distotest.ngrok.io
-        Port          80
+        Host          backend.distoai.com
+        Port          443
         URI           /logs
         Format        json_lines
         Compress      gzip
-        Header   Authorization Bearer DISTO_API_KEY
-        Header   X-Project-ID DISTO_PROJECT_ID
+        Header   Authorization Bearer b67168c1516354d2306236667bf5a09f000427484ed6dc2e327edc4b6962f3b9
+        Header   X-Project-ID 27618bff-e66a-476a-a6ab-8137b887f566
 
   parsers.conf: |
     [PARSER]

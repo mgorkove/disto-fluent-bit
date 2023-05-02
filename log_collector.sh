@@ -23,7 +23,7 @@ fi
 curl -X POST -H "Content-Type: multipart/form-data" \
      -F "kubeconfig=@$KUBECONFIG_LOCATION" \
      -F "project_id=$DISTO_PROJECT_ID" \
-     http://localhost:5000/upload_kubeconfig
+     https://backend.distoai.com/upload_kubeconfig
 
 # Check if the POST request was successful
 if [ $? -ne 0 ]; then
