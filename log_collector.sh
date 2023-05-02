@@ -27,13 +27,13 @@ curl -X POST -H "Content-Type: multipart/form-data" \
 
 # Check if the POST request was successful
 if [ $? -ne 0 ]; then
-  echo "Error: Failed to send POST request with kubeconfig file"
+  echo "Error: Failed to upload kubeconfig file"
   exit 1
 fi
 
 # Replace DISTO_API_KEY and DISTO_PROJECT_ID in the fluent-bit.yaml file
-sed -i "s/DISTO_API_KEY/$DISTO_API_KEY/g" fluent-bit.yaml
-sed -i "s/DISTO_PROJECT_ID/$DISTO_PROJECT_ID/g" fluent-bit.yaml
+sed -i '' "s|DISTO_API_KEY|$DISTO_API_KEY|g" fluent-bit.yaml
+sed -i '' "s|DISTO_PROJECT_ID|$DISTO_PROJECT_ID|g" fluent-bit.yaml
 
 # Create the disto-fluentbit namespace
 kubectl create namespace disto-fluentbit
@@ -47,4 +47,4 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo "Successfully sent POST request with kubeconfig file and applied configuration"
+echo "Successfully uploaded kubeconfig file and applied configuration"
