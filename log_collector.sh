@@ -31,9 +31,18 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# Determine the appropriate sed syntax based on the operating system
+if [[ "$(uname)" == "Darwin" ]]; then
+  # macOS/BSD syntax
+  SED_INPLACE="sed -i ''"
+else
+  # GNU/Linux syntax
+  SED_INPLACE="sed -i"
+fi
+
 # Replace DISTO_API_KEY and DISTO_PROJECT_ID in the fluent-bit.yaml file
-sed -i '' "s|DISTO_API_KEY|$DISTO_API_KEY|g" fluent-bit.yaml
-sed -i '' "s|DISTO_PROJECT_ID|$DISTO_PROJECT_ID|g" fluent-bit.yaml
+$SED_INPLACE "s|DISTO_API_KEY|$DISTO_API_KEY|g" fluent-bit.yaml
+$SED_INPLACE "s|DISTO_PROJECT_ID|$DISTO_PROJECT_ID|g" fluent-bit.yaml
 
 # Create the disto-fluentbit namespace
 kubectl create namespace disto-fluentbit
